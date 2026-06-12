@@ -1,0 +1,61 @@
+# lean-evm
+
+Machine-checked EVM bytecode for a verified ERC-20 subset, in Lean 4.
+
+This repo models an EVM bytecode subset, generates bytecode for an ERC-20 subset
+from pure Lean functions (no `solc` in the trust chain), and proves the generated
+bytecode does exactly what a dependently-typed specification says — verified by the
+Lean 4 kernel with **0 sorry**.
+
+## What's proved
+
+- **A 27-opcode EVM** with fuel-bounded execution semantics. `keccak256` is modeled
+  opaquely, so correctness holds regardless of the hash's internals.
+- **A verified assembler** (`List Op → bytes`, two-pass label resolution): every JUMP
+  provably lands on a `JUMPDEST`.
+- **A dependently-typed `Ledger`** where the supply invariant `totalSupply = Σ balances`
+  is a required proof field — invalid states are unconstructable.
+- **Four ERC-20 functions** (`totalSupply`, `balanceOf`, `mint`, `transfer`) proved end
+  to end through a 4-tier chain: execution → assembly → selector dispatch → **ledger
+  bridge** (bytecode storage writes match the spec's postconditions exactly).
+
+The result: **185 bytes of runtime bytecode provably implement the spec.** The 197-byte
+deploy bytecode runs on Anvil with 15/15 end-to-end tests passing
+(`test/evm_e2e.sh`, requires Foundry).
+
+## The Insight
+
+Formal verification today is monolithic. You verify a complete system, top to bottom, as a single effort. If you change one function, you often re-verify the whole thing. If ten teams use the same library, each verifies it independently. Verification labor doesn't compound — it's spent once and thrown away.
+
+But there's a deeper problem: **verification doesn't compose.** Component A is verified. Component B is verified. A composed with B has emergent behavior that neither proof covers. Every composition is a new verification effort from scratch.
+
+Category theory gives us the framing to solve this. If we structure verified building blocks correctly, composition verification becomes mechanical — in many cases, literally just type-checking.
+
+The key is **dependent types as specifications.** In Lean 4, a function's type can express arbitrary properties:
+
+```lean
+-- The TYPE is the spec. No separate spec artifact needed.
+def transfer (from to : Address) (amt : {n : Nat // n ≤ balanceOf from})
+  : {result : Ledger // balanceOf from result = balanceOf from old - amt
+                      ∧ balanceOf to result = balanceOf to old + amt}
+```
+
+The return type states exactly what `transfer` guarantees. Lean's kernel checks this at compile time. The function *is* the proof.
+
+When two such functions compose, Lean's type-checker verifies the composition automatically — or tells you precisely what's missing.
+
+## Build
+
+```bash
+~/.elan/bin/lake exe cache get   # prebuilt Mathlib oleans (first time)
+~/.elan/bin/lake build
+```
+
+See [`CLAUDE.md`](./CLAUDE.md) for structure and proof conventions, and
+[`docs/`](./docs) for design/findings docs.
+
+## Status / next steps
+
+`burn`, `approve`/`allowance`/`transferFrom`, LOG/event opcodes, deploy-preamble
+verification, and auto-generating bytecode from the spec (a verified compiler) are
+open work. See `docs/plans/2026-02-25-evm-erc20-status.md`.
