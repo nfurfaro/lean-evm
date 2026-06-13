@@ -21,8 +21,11 @@ def deployHex : Option String :=
 
 end EVM
 
--- Print the deployable bytecode
-#eval do
+/-- Print the deployable bytecode. -/
+def printDeployHex : IO Unit :=
   match EVM.deployHex with
   | some hex => IO.println hex
   | none     => IO.println "ERROR: label resolution failed"
+
+-- Entry point: `lake env lean --run Lemma/EVM/Hex.lean`.
+def main : IO Unit := printDeployHex

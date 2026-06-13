@@ -7,6 +7,29 @@ from pure Lean functions (no `solc` in the trust chain), and proves the generate
 bytecode does exactly what a dependently-typed specification says — verified by the
 Lean 4 kernel with **0 sorry**.
 
+## Quick start
+
+Requires [`elan`](https://github.com/leanprover/elan) (the Lean toolchain manager); the
+pinned Lean version in `lean-toolchain` is fetched automatically.
+
+```bash
+git clone <this-repo> lean-evm && cd lean-evm
+
+~/.elan/bin/lake exe cache get   # one-time: download prebuilt Mathlib oleans
+~/.elan/bin/lake build           # check every proof — exit 0 means verified (0 sorry)
+```
+
+`lake build` is the main event: it's "compile" and "verify" in one. Then explore:
+
+```bash
+# print the deployable contract bytecode (the #eval output)
+~/.elan/bin/lake env lean --run Lemma/EVM/Hex.lean
+
+# end-to-end test on a real EVM (needs Foundry: anvil + cast)
+anvil &                           # start a local node
+bash test/evm_e2e.sh              # deploy + run 15 assertions
+```
+
 ## What's proved
 
 - **A 27-opcode EVM** with fuel-bounded execution semantics. `keccak256` is modeled
@@ -44,12 +67,7 @@ The return type states exactly what `transfer` guarantees. Lean's kernel checks 
 
 When two such functions compose, Lean's type-checker verifies the composition automatically — or tells you precisely what's missing.
 
-## Build
-
-```bash
-~/.elan/bin/lake exe cache get   # prebuilt Mathlib oleans (first time)
-~/.elan/bin/lake build
-```
+## Reference
 
 See [`CLAUDE.md`](./CLAUDE.md) for structure and proof conventions, and
 [`docs/`](./docs) for design/findings docs.
