@@ -22,8 +22,11 @@ dependently-typed `Ledger` specification. Extracted from the `lemma` project.
 - `Lemma/EVM/` — EVM semantics (`State`, `Decode`, `Step`, `Exec`), opcode model
   (`Op`), assembler (`Asm`), ABI/`Layout`, codegen (`Codegen/`), and correctness
   proofs (`Proofs/`).
-- `Lemma/Scaled/` — the two files the ledger-bridge proofs depend on: `Ledger`
-  (invariant `totalSupply = Σ balances` as a proof field) and `Basic` (Fin n sum lemmas).
+- `Lemma/Scaled/` — the dependently-typed spec layer: `Ledger` (invariant
+  `totalSupply = Σ balances` as a proof field), `Basic` (Fin n sum lemmas),
+  `Atoms/` (transfer/mint/burn, return type *is* the spec), `Compose/` (four proved
+  atom compositions), `GlueSpecs/` (extracted composition obligations), and
+  `Tactic/ExtractGlueSpec.lean` (tactic that emits a composition's obligation as a stub).
 - `docs/` — design/findings docs and `achievements.md`.
 - `test/evm_e2e.sh` — Anvil end-to-end test (requires Foundry).
 
